@@ -1,4 +1,4 @@
-config = {
+config1 = {
     'headers': {
         'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
         'Accept-Encoding': 'gzip, deflate, br, zstd',

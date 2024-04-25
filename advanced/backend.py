@@ -5,13 +5,23 @@ from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 import tkinter as tk
 from tkinter import ttk, scrolledtext
-from localconfig import config
 import time
 import threading
 import os
 import requests
 import re
+import json
+
 def download_manga(manga, chapter_von, chapter_bis, log_widget, directory):
+
+    def load_config():
+        path = os.path.abspath(__file__)
+        path = os.path.dirname(path)
+        os.chdir(path)
+        with open('config.json', 'r') as file:
+            return json.load(file)
+    config = load_config()
+
     headers = config['headers']
     main_url = config[manga]
 
@@ -44,8 +54,8 @@ def download_manga(manga, chapter_von, chapter_bis, log_widget, directory):
 
         ch = result [0]
         result.pop(0)
-        
-        ch = ch.replace(' ', '')
+        while ' ' in ch:
+            ch = ch.replace(' ', '')
         for i in range(len(result)):
             path = directory + manga + r'/Chapter ' + ch
             response = requests.get(result[i], headers=headers)
@@ -64,6 +74,8 @@ def download_manga(manga, chapter_von, chapter_bis, log_widget, directory):
         chapters.reverse()
 
         chapter_text = chapters[i].get_attribute('innerText')
+        if(chapter_text) == 'The Origin Of Obedience. Part 2':
+            chapter_text = 'Chapter 55.5'
         match = re.search(r'Chapter (\d+):', chapter_text)
         if match:
             chapter_text = match.group(1)
@@ -74,8 +86,14 @@ def download_manga(manga, chapter_von, chapter_bis, log_widget, directory):
         if 'Vol.' in chapter_text:
             clean_text = re.sub(r'Vol\.\d+\s+', '', chapter_text)
             chapter_text = clean_text
+        if 'Extra' in chapter_text:
+            chapter_text = f"Extra {i+1}"
 
         chapter_text = chapter_text.replace("Chapter ", "")
+
+        if chapter_text == '':
+            continue
+        
         result.append(chapter_text)
 
         chapters[i].click()
