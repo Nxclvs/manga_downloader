@@ -23,7 +23,7 @@ def download_manga(manga, chapter_von, chapter_bis, log_widget, directory):
     config = load_config()
 
     headers = config['headers']
-    main_url = config[manga]
+    main_url = config[manga][0]
 
     def log_message(message):
         if log_widget:
@@ -124,6 +124,56 @@ def download_manga(manga, chapter_von, chapter_bis, log_widget, directory):
 
     log_message('Chapter {} bis Chapter {} wurden erfolgreich heruntergeladen'.format(chapter_von, chapter_bis))
 
+    return
+
+def get_chapter_length(manga, url):
+    def load_config():
+        path = os.path.abspath(__file__)
+        path = os.path.dirname(path)
+        os.chdir(path)
+        with open('config.json', 'r') as file:
+            return json.load(file)
+        
+    def save_config(config):
+        path = os.path.abspath(__file__)
+        path = os.path.dirname(path)
+        os.chdir(path)
+        with open('config.json', 'w') as file:
+            json.dump(config, file, indent=4)
+        return
+
+    config = load_config()
+
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--log-level=3") 
+    chrome_options.add_experimental_option('detach', True)
+
+    browser = Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)  
+    browser.maximize_window()
+
+    browser.get(url)
+    time.sleep(3)
+
+    accept_cookies_button = browser.find_element(By.XPATH, '//*[@id="qc-cmp2-ui"]/div[2]/div/button[3]')
+    accept_cookies_button.click()
+    time.sleep(2)
+
+    chapter_list = browser.find_element(By.XPATH, '//*[@id="row-content-chapter"]')
+    chapters = chapter_list.find_elements(By.XPATH, './li/a')
+    result = len(chapters)
+
+    browser.quit()
+
+    config[manga].append(result)
+
+    save_config(config)
+
+    
+    return 
+
+def calc_chapter_length(manga, url):
+    get_chapter_length(manga, url)
     return
 
 def start_manga_download(manga, von, bis, log_widget, directory):
